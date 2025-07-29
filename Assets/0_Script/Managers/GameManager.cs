@@ -8,6 +8,12 @@ public class GameManager : SingletonGlobal<GameManager>
         get; 
         private set;
     }
+    
+    public static SidePlayer sidePlayer
+    {
+        get; 
+        private set;
+    }
 
     bool isInitialized = false;
 
@@ -33,10 +39,11 @@ public class GameManager : SingletonGlobal<GameManager>
             return;
 
         player = FindAnyObjectByType<Player>();
+        sidePlayer = FindAnyObjectByType<SidePlayer>();
         isInitialized = true;
     }
     
-    // 두번 초기화 막음
+    // 
     public bool IsInitialized() => isInitialized;
 
 

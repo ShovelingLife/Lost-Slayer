@@ -3,9 +3,8 @@ using UnityEngine;
 public enum EPlayerState : uint
 {
     IDLE = 0,
-    MOVE = 1,
-    
-    
+    MOVE,    
+    JUMP
 }
 
 public enum ETest

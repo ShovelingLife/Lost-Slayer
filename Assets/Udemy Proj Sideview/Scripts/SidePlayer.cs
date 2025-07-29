@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using static EPlayerState;
 
 public class SidePlayer : MonoBehaviour
@@ -10,107 +11,64 @@ public class SidePlayer : MonoBehaviour
     #region Moving
 
     // Transform trans;
-    
+
     // UI 매니저에 옮길 예정
-    Dictionary<string, List<KeyCode>> curKeys = new Dictionary<string, List<KeyCode>>();
-    
-    Rigidbody2D rb;
+    Dictionary<KeyCode, Action> downKeys = new Dictionary<KeyCode, Action>();
+    Dictionary<KeyCode, Action> upKeys = new Dictionary<KeyCode, Action>();
 
-    [SerializeField]
-    float moveSpeed = 3.5f;
 
-    [SerializeField]
-    float jumpForce = 8f;
-
-    float xInput;
-    float yDir;
-    // bool isFaced;
-    
-    [SerializeField]
-    int jumpCnt = 0;
+    public EPlayerState state
+    {
+        get;
+        set;
+    }
 
     #endregion
 
     #region Animation 
 
-    Animator animator;
-
-    public EPlayerState state
-    {
-        get;
-        private set;
-    }
+    public Animator animator;
 
     #endregion
 
     void Awake()
     {
+
         // trans = GetComponent<Transform>();
-        rb = GetComponent<Rigidbody2D>();
         animator = GetComponentInChildren<Animator>();
 
-        // Custom Key
-        curKeys.Add("Move", new List<KeyCode>(new KeyCode[] { KeyCode.LeftArrow, KeyCode.RightArrow }));
+        // // Custom Key
+        // // curKeys.Add("Move", new List<KeyCode>(new KeyCode[] { KeyCode.LeftArrow, KeyCode.RightArrow }));
+        // upKeys.Add(KeyCode.LeftArrow, Move); upKeys.Add(KeyCode.RightArrow, Move);
+        // upKeys.Add(KeyCode.Space, Jump);
+
+        // downKeys.Add(KeyCode.LeftArrow, Stop); downKeys.Add(KeyCode.RightArrow, Stop);
     }
 
     void Update()
     {
-        CheckMove();
-        CheckJump();
+        animator.SetInteger("state", (int)state);
     }
 
-    void CheckMove()
-    {
-        xInput = Input.GetAxisRaw("Horizontal");
-        rb.linearVelocity = new Vector2(xInput * moveSpeed, rb.linearVelocityY);
+    // void Update()
+    // {
+    //     foreach (KeyCode key in Enum.GetValues(typeof(KeyCode)))
+    //     {
+    //         if (key == KeyCode.None)
+    //             continue;
 
-        #region Animation
+    //         var name = key.ToString();
 
-        // yDir = (velX > 0f) ? 0f : 180f;
+    //         if ((Input.GetButton(name) || Input.GetButtonDown(name))
+    //             && downKeys.ContainsKey(key))
+    //             downKeys[key].Invoke();
 
-        foreach (var key in curKeys["Move"])
-        {
-            if (Input.GetKeyDown(key) || Input.GetKey(key))
-            {
-                state = MOVE;
-                // Debug.Log($" Cur speed : {xInput}");
-                // transform.Rotate(new Vector3(0f, 180f, 0f));
-                transform.rotation = new Quaternion(0f, (xInput > 0f) ? 0f : 180f, 0f, 0f);
-                
-                // 살짝 어색함 > 오른쪽으로 이동 후 잠시 멈춘 후 방향 전환 시 idle 애니메이션 실행
+    //         if (Input.GetButtonUp(name))
+    //             upKeys[key].Invoke();
+    //     }
 
-            }
-            else if (Input.GetKeyUp(key) && xInput == 0f)
-                state = IDLE;
-        }
-        // if (!isFaced && xInput < 0f)
-        //     transform.Rotate(new Vector3(0f, 180f, 0f));
-
-        // else
-        //     transform.Rotate(Vector3.zero);
-            
-        animator?.SetInteger("state", (int)state);
-        #endregion
-    }
-
-    void CheckJump()
-    {
-        if (Input.GetKeyDown(KeyCode.Space) ||
-            Input.GetKeyDown(KeyCode.UpArrow))
-        {
-            if (jumpCnt < 2)
-            {
-                rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
-                jumpCnt++;
-            }
-        }
-    }
-    
-    void OnCollisionEnter2D(Collision2D collision)
-    {
-        if (collision.gameObject.CompareTag("Wall"))
-        {
-            jumpCnt = 0;
-        }
-    }
+    //     /* 살짝 어색함 > 오른쪽으로 이동 후 잠시 멈춘 후 방향 전환 시 idle 애니메이션 실행
+    //                     수정 완료 25.07.25
+    //                 */
+    // }
 }
