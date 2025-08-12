@@ -16,27 +16,39 @@ public class SidePlayer : MonoBehaviour
     Dictionary<KeyCode, Action> downKeys = new Dictionary<KeyCode, Action>();
     Dictionary<KeyCode, Action> upKeys = new Dictionary<KeyCode, Action>();
 
-
-    public EPlayerState state
+    public SidePlayerInput sidePlayerInput
     {
         get;
-        set;
+        private set;
     }
 
     #endregion
 
-    #region Animation 
 
-    public Animator animator;
+    public EPlayerState state
+    {
+        get;
+        private set;
+    }
 
-    #endregion
+    public void ChangeState(EPlayerState newState)
+    {
+        state = newState;
+        animator.SetInteger("state", (int)newState);
+    }
+    
+    public Animator animator
+    {
+        get;
+        private set;
+    }
 
     void Awake()
     {
 
         // trans = GetComponent<Transform>();
+        sidePlayerInput = GetComponentInChildren<SidePlayerInput>();
         animator = GetComponentInChildren<Animator>();
-
         // // Custom Key
         // // curKeys.Add("Move", new List<KeyCode>(new KeyCode[] { KeyCode.LeftArrow, KeyCode.RightArrow }));
         // upKeys.Add(KeyCode.LeftArrow, Move); upKeys.Add(KeyCode.RightArrow, Move);
@@ -47,7 +59,7 @@ public class SidePlayer : MonoBehaviour
 
     void Update()
     {
-        animator.SetInteger("state", (int)state);
+        // Debug.Log(state.ToString());
     }
 
     // void Update()
@@ -71,4 +83,11 @@ public class SidePlayer : MonoBehaviour
     //                     수정 완료 25.07.25
     //                 */
     // }
+
+    void OnCollisionEnter2D(Collision2D collision)
+    {
+        sidePlayerInput.OnCollisionEnter2D(collision);
+    }
+
+    public bool IsRunningAttackMotion() => animator.GetCurrentAnimatorStateInfo(0).IsName("Attack");
 }

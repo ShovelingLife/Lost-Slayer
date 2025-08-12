@@ -1,10 +1,12 @@
 using UnityEngine;
 
-public enum EPlayerState : uint
+public enum EPlayerState
 {
+    DEATH = -1,
     IDLE = 0,
-    MOVE,    
-    JUMP
+    MOVE,
+    JUMP,
+    ATTACK
 }
 
 public enum ETest
