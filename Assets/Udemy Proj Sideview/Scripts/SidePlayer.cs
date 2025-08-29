@@ -6,6 +6,8 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using static EPlayerState;
 
+// 25-08-29 박스 > 캡슐 콜라이더로 변경
+
 public class SidePlayer : MonoBehaviour
 {
     #region Moving
@@ -84,10 +86,11 @@ public class SidePlayer : MonoBehaviour
     //                 */
     // }
 
-    void OnCollisionEnter2D(Collision2D collision)
-    {
-        sidePlayerInput.OnCollisionEnter2D(collision);
-    }
+    void OnCollisionEnter2D(Collision2D collision) => sidePlayerInput.OnCollisionEnter2D(collision);
+
+    private void OnCollisionStay2D(Collision2D collision) => sidePlayerInput.OnCollisionStay2D(collision);
+    
+    private void OnCollisionExit2D(Collision2D collision) => sidePlayerInput.OnCollisionExit2D(collision);
 
     public bool IsRunningAttackMotion() => animator.GetCurrentAnimatorStateInfo(0).IsName("Attack");
 }

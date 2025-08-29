@@ -13,22 +13,45 @@ using static EPlayerState;
 
 public class SidePlayerInput : MonoBehaviour
 {
+    #region 플레이어 관련
+    
     SidePlayer player; 
     Rigidbody2D rb;
     
     PlayerInput input;
     
+    #endregion
+    
+    #region 이동 관련
+    
     [SerializeField]
     float moveSpeed = 3.5f;
+    
+    private Vector2 moveInput;
+    
+    float xInput;
+    
+    #endregion
+
+    #region 점프 관련
 
     // [SerializeField]
     float jumpForce = 5f;
 
-    float xInput;
     float yDir;
     
     int jumpCnt = 0;
-    private Vector2 moveInput;
+
+    #endregion
+
+    #region 슬라이드 관련
+    
+    [SerializeField] 
+    private float slidingSpeed;
+
+    private Vector3 lastSlidePos;
+    
+    #endregion
 
     [SerializeField] private InputActionAsset inputs;
 
@@ -47,30 +70,68 @@ public class SidePlayerInput : MonoBehaviour
     
     public void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.gameObject.CompareTag("Wall"))
+        var block = collision.gameObject;
+        
+        if (block.CompareTag("Wall"))
         {
-            jumpCnt = 0;
-            CheckIfMoving();
+            // 점프 후 착지
+            if (block.transform.rotation.eulerAngles.z == 0f)
+            {
+                jumpCnt = 0;
+                CheckIfMoving();
+            }
+            // 슬라이드
+            else
+                player.ChangeState(SLIDE);
         }
     }
 
+    public void OnCollisionStay2D(Collision2D other)
+    {
+        if (player.state == SLIDE)
+            Slide();
+    }
+    
+    public void OnCollisionExit2D(Collision2D other)
+    {
+    }
+    
     void InitInput()
     {
         input = GetComponent<PlayerInput>();
+        
         input.actions["Move"].performed += Move;
         input.actions["Move"].canceled += Stop;
         
         // w key > 
         input.actions["Jump"].performed += Jump;
+        input.actions["Jump"].canceled += (context =>
+        {
+            /* 수정 해야할 부분 >
+
+                1. 이동키가 안먹힘
+                // Move 슬라이드 방식 생각해봐야함
+
+                2. 슬라이드 로직이 이상함 > 벽 탄 상태서 바닥 착지 시
+            
+            */
+            // 공중에 있다가 벽에 다시 붙어야함
+            // Debug.Log($"Player pos : {player.transform.position.y} / Last pos : {(lastSlidePos - new Vector3(0f, 0.01f, 0f)).y}");
+            // 타이머 방식 적용할 예정
+            if (jumpCnt == 2 &&
+                )
+                jumpCnt = 0;
+        });
         
         // s key > go down
+        
+        // shift > dash
         
         // space > line
         
         
         // mouse click
         input.actions["Attack"].performed += Attack;
-        
         
         // foreach (var events in input.actionEvents)
         // {
@@ -84,7 +145,7 @@ public class SidePlayerInput : MonoBehaviour
 
     void Move(Vector2 dir)
     {
-        if (player.state == ATTACK)
+        if (player.state is not (MOVE or IDLE or JUMPFALL))
             return;
         
         moveInput = dir;
@@ -98,6 +159,9 @@ public class SidePlayerInput : MonoBehaviour
 
     void CheckIfMoving()
     {
+        if (player.state is SLIDE)
+            return;
+        
         var keyBoard = Keyboard.current;
         
         // 커스터마이징 할 시 변경 해야함
@@ -122,9 +186,19 @@ public class SidePlayerInput : MonoBehaviour
     void HandleMovement()
     {
         // Debug.Log(player.state.ToString());
-        Vector2 velocity = rb.linearVelocity;
-        velocity.x = moveInput.x * moveSpeed;
-        rb.linearVelocity = velocity;
+        switch (player.state)
+        {
+            case IDLE:
+            case MOVE:
+                Vector2 velocity = rb.linearVelocity;
+                velocity.x = moveInput.x * moveSpeed;
+                rb.linearVelocity = velocity;
+                break;
+            
+            case SLIDE:
+                Slide();
+                break;
+        }
     }
 
     void Jump(InputAction.CallbackContext context)
@@ -140,6 +214,12 @@ public class SidePlayerInput : MonoBehaviour
             if (player.state == ATTACK)
                 ChangeState(IDLE);
         }
+        
+        #region 점프 테스트 용도
+            
+        // Debug.Log($"Jump cnt : {jumpCnt}");
+            
+        #endregion    
     }
 
     void GoDown()
@@ -174,5 +254,12 @@ public class SidePlayerInput : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.A) ||
             Input.GetKeyDown(KeyCode.D))
             Debug.Log("moving"); */
+    }
+
+    // 현재는 콜리전 방식 > 레이캐스트 방식도 가능
+    void Slide()
+    {
+        lastSlidePos = player.transform.position;
+        rb.linearVelocity = new Vector2(rb.linearVelocity.x, Mathf.Clamp(rb.linearVelocity.y, -slidingSpeed, float.MaxValue));
     }
 }
