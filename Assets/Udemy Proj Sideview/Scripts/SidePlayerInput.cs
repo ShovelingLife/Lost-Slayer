@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -50,11 +51,20 @@ public class SidePlayerInput : MonoBehaviour
     private float slidingSpeed;
 
     private Vector3 lastSlidePos;
+
+    // [SerializeField] 
+    const float waitSlideJumpTime = 0.75f; // 고정
+
+    private float curSlideJumpTime;
+    
+    bool wasSliding = false;
     
     #endregion
 
     [SerializeField] private InputActionAsset inputs;
 
+
+    bool HasReachedMaxJump() => jumpCnt == 2;
     
     void Awake()
     {
@@ -66,6 +76,15 @@ public class SidePlayerInput : MonoBehaviour
     private void FixedUpdate()
     {
         HandleMovement();
+        // Debug.Log($"Cur State : {player.state}");
+
+        if (wasSliding && HasReachedMaxJump())
+            curSlideJumpTime += Time.fixedDeltaTime;
+        
+        if (curSlideJumpTime >= waitSlideJumpTime)
+            curSlideJumpTime = jumpCnt = 0;
+        // else
+        //     jumpCnt = 0;
     }
     
     public void OnCollisionEnter2D(Collision2D collision)
@@ -78,11 +97,15 @@ public class SidePlayerInput : MonoBehaviour
             if (block.transform.rotation.eulerAngles.z == 0f)
             {
                 jumpCnt = 0;
+                wasSliding = false;
                 CheckIfMoving();
             }
             // 슬라이드
             else
+            {
+                wasSliding = true;
                 player.ChangeState(SLIDE);
+            }
         }
     }
 
@@ -118,9 +141,7 @@ public class SidePlayerInput : MonoBehaviour
             // 공중에 있다가 벽에 다시 붙어야함
             // Debug.Log($"Player pos : {player.transform.position.y} / Last pos : {(lastSlidePos - new Vector3(0f, 0.01f, 0f)).y}");
             // 타이머 방식 적용할 예정
-            if (jumpCnt == 2 &&
-                )
-                jumpCnt = 0;
+            
         });
         
         // s key > go down
@@ -145,7 +166,7 @@ public class SidePlayerInput : MonoBehaviour
 
     void Move(Vector2 dir)
     {
-        if (player.state is not (MOVE or IDLE or JUMPFALL))
+        if (player.state is not (MOVE or IDLE or JUMPFALL or SLIDE))
             return;
         
         moveInput = dir;
@@ -159,8 +180,8 @@ public class SidePlayerInput : MonoBehaviour
 
     void CheckIfMoving()
     {
-        if (player.state is SLIDE)
-            return;
+        // if (player.state is SLIDE)
+        //     return;
         
         var keyBoard = Keyboard.current;
         
@@ -204,7 +225,7 @@ public class SidePlayerInput : MonoBehaviour
     void Jump(InputAction.CallbackContext context)
     {
         // 최대 점프 횟수
-        if (jumpCnt < 2)
+        if (!HasReachedMaxJump())
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
             player.animator.SetFloat("velY", rb.linearVelocityY); 
@@ -214,7 +235,6 @@ public class SidePlayerInput : MonoBehaviour
             if (player.state == ATTACK)
                 ChangeState(IDLE);
         }
-        
         #region 점프 테스트 용도
             
         // Debug.Log($"Jump cnt : {jumpCnt}");
@@ -259,6 +279,7 @@ public class SidePlayerInput : MonoBehaviour
     // 현재는 콜리전 방식 > 레이캐스트 방식도 가능
     void Slide()
     {
+        // Debug.Log($"CurSlideJumpTime: {curSlideJumpTime}");
         lastSlidePos = player.transform.position;
         rb.linearVelocity = new Vector2(rb.linearVelocity.x, Mathf.Clamp(rb.linearVelocity.y, -slidingSpeed, float.MaxValue));
     }
